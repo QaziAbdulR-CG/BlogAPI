@@ -23,14 +23,20 @@ namespace BlogAPI.Controllers
             {
                 return BadRequest();
             }
+            //userObject.password = PasswordHasher.HashPassword(userObject.password);
             var user =  await _authContext.Users
-                .FirstOrDefaultAsync(x => x.username== userObject.username && x.password == userObject.password);
+                .FirstOrDefaultAsync(x => x.username== userObject.username || x.password == userObject.password);
 
             if (user == null)
             {
                 return NotFound(new {Message = "User Not Found!"});
             }
-            
+
+            if (!PasswordHasher.VerifyPassword(userObject.password, user.password))
+            {
+                return BadRequest(new { Message = "Password is Incorrect" }); ;
+            }
+
             return Ok(new 
             {
                 Message = "Login Success!"
@@ -51,6 +57,7 @@ namespace BlogAPI.Controllers
             {
                 return BadRequest(new { Message = "Email already exist!" });
             }
+            userObject.password = PasswordHasher.HashPassword(userObject.password);
             userObject.role = "User";
             userObject.token = "";
             await _authContext.Users.AddAsync(userObject);
