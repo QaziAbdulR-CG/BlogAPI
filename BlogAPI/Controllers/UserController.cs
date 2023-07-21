@@ -2,6 +2,12 @@
 using BlogAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using System;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BlogAPI.Controllers
 {
@@ -36,11 +42,12 @@ namespace BlogAPI.Controllers
             {
                 return BadRequest(new { Message = "Password is Incorrect" }); ;
             }
-
-            return Ok(new 
+            user.token = createJwtToken(user);
+            return Ok(new
             {
+                Token = user.token,
                 Message = "Login Success!"
-            });
+            }); ;
         }
         [HttpPost("register")]
         public async Task<IActionResult> RegisterUser([FromBody] Models.User userObject)
@@ -72,5 +79,33 @@ namespace BlogAPI.Controllers
             => _authContext.Users.AnyAsync(x=>x.username==username);
         private Task<bool> CheckEmailExistAsync(string email)
             => _authContext.Users.AnyAsync(x => x.email == email);
+
+        private string createJwtToken(User user)
+        {
+            var jwtTokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes("secretKeysecretKeysecretKeysecretKey");
+            var identity = new ClaimsIdentity(new Claim[]
+            {
+                new Claim(ClaimTypes.Role, user.role),
+                new Claim(ClaimTypes.Name, $"{user.firstName} {user.lastName}")
+            });
+            var credentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = identity,
+                Expires = DateTime.Now.AddMinutes(5),
+                SigningCredentials = credentials
+            };
+            var token = jwtTokenHandler.CreateToken(tokenDescriptor);
+
+            return jwtTokenHandler.WriteToken(token);
+        }
+        [Authorize]
+        [HttpGet("getAllUsers")]
+        public async Task<ActionResult<User>> getAllUsers()
+        {
+            return Ok(await _authContext.Users.ToListAsync());
+        }
     }
 }
