@@ -9,5 +9,6 @@ namespace BlogAPI.Models
         public int blogId { get; set; }
         public string? comment { get; set; }
         public string? userName { get; set; }
+        public DateTime? publishDate { get; set; }
     }
 }

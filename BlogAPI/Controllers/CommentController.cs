@@ -27,7 +27,7 @@ namespace BlogAPI.Controllers
         public async Task<IActionResult> getCommentByBlogId(int id)
         {
             //var comments = await _authContext.Comments.FirstOrDefaultAsync(x => x.blogId == id);
-            var filterData=await _authContext.Comments.Select(x=>x.blogId==id).ToListAsync();
+            var filterData=await _authContext.Comments.Where(x=>x.blogId==id).ToListAsync();
             var resultsets = filterData.ToList();
 
            
@@ -45,11 +45,12 @@ namespace BlogAPI.Controllers
             {
                 blogId = commentAddRequest.blogId,
                 comment = commentAddRequest.comment,
-                userName = commentAddRequest.userName
+                userName = commentAddRequest.userName,
+                publishDate = DateTime.Now
             };
             await _authContext.Comments.AddAsync(commentObject);
             await _authContext.SaveChangesAsync();
-            return Ok();
+            return Ok(commentObject.blogId);
         }
         [HttpDelete]
         [Route("deleteCommentById/{id:int}")]
